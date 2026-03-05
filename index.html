@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Darts Checkout Trainer</title>
+
+  <style>
+    :root{
+      /* LIGHT THEME */
+      --bg1:#f5f7fb;
+      --bg2:#eef2f8;
+
+      --surface:#ffffff;
+      --surface2:#f8fafc;
+
+      --text:#0f172a;
+      --muted:#475569;
+
+      --line:rgba(15,23,42,.12);
+      --shadow:0 18px 50px rgba(2,6,23,.10);
+
+      --accent:#5fbf00;     /* freundlich, nicht „neon tot“ */
+      --accentSoft:rgba(95,191,0,.14);
+      --danger:#c0262d;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family: system-ui, Segoe UI, Roboto, Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 12% 0%, rgba(95,191,0,.10), transparent 55%),
+        radial-gradient(900px 600px at 90% 15%, rgba(59,130,246,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      padding: 28px;
+    }
+
+    /* EIN Rechteck, alles drin */
+    .appShell{
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--line);
+      border-radius: 14px; /* rechteckig, aber nicht scharf wie Excel 97 */
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 18px;
+    }
+
+    .brand{
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(248,250,252,.9));
+    }
+    .brandTitle{
+      font-size: 44px;
+      line-height: 1.06;
+      font-weight: 950;
+      letter-spacing: .3px;
+      margin:0;
+    }
+    .brandSub{
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: .2px;
+      font-weight: 650;
+    }
+
+    .hint{ color: var(--muted); font-size: 13px; line-height: 1.4; margin-top: 10px; }
+    .small{ font-size: 12px; color: var(--muted); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .row{ display:flex; gap: 16px; flex-wrap: wrap; align-items:flex-start; }
+    .grow{ flex:1; min-width: 360px; }
+    .fixed{ width: 420px; }
+
+    .card{
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 28px rgba(2,6,23,.06);
+    }
+
+    h2{ margin:0 0 10px; font-size: 18px; }
+    .big{ font-size: 56px; font-weight: 950; letter-spacing: .6px; }
+
+    input, select{
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      width: 100%;
+      background: var(--surface2);
+      color: var(--text);
+      outline: none;
+    }
+    input::placeholder{ color: rgba(15,23,42,.45); }
+    input:focus, select:focus{
+      border-color: rgba(95,191,0,.45);
+      box-shadow: 0 0 0 4px var(--accentSoft);
+      background: #fff;
+    }
+
+    button{
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 650;
+      box-shadow: 0 6px 16px rgba(2,6,23,.06);
+    }
+    button:hover{ background: var(--surface2); }
+    button:disabled{ opacity: .6; cursor:not-allowed; box-shadow:none; }
+
+    button.primary{
+      background: var(--accent);
+      border-color: rgba(0,0,0,.08);
+      color: #0b1b00;
+      font-weight: 900;
+      box-shadow: 0 12px 26px rgba(95,191,0,.22);
+    }
+    button.primary:hover{ filter: brightness(1.03); }
+
+    button.active{
+      border-color: rgba(95,191,0,.65);
+      box-shadow: 0 0 0 3px var(--accentSoft) inset, 0 6px 16px rgba(2,6,23,.06);
+      font-weight: 900;
+      background: #fff;
+    }
+
+    .pill{
+      display:inline-block;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px;
+      margin-right: 8px;
+      margin-top: 8px;
+      background: rgba(255,255,255,.75);
+    }
+
+    .ok{ color: #0f7a1f; font-weight: 900; }
+    .bad{ color: var(--danger); font-weight: 900; }
+
+    .grid3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .boardWrap{ display:flex; justify-content:center; }
+    .boardHint{ text-align:center; margin-top:8px; }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      border:1px solid var(--line);
+      border-bottom-width:2px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background:#fff;
+    }
+
+    .pad{ display:grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .pad button{ padding: 10px 0; }
+    .bar{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    hr{ border:none; border-top:1px solid var(--line); margin:16px 0; }
+
+    @media (max-width: 980px){
+      body{ padding: 16px; }
+      .fixed{ width:100%; }
+      .grid3{ grid-template-columns: 1fr; }
+      .brandTitle{ font-size: 36px; }
+      .big{ font-size: 48px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="appShell">
+    <div class="brand">
+      <div class="brandTitle">"The Publisher" Training Tool</div>
+      <div class="brandSub">Checkout, Training, Mindset</div>
+    </div>
+
+    <div class="hint">
+      Normal Modus: du tippst Tokens wie <span class="mono">T20</span>, <span class="mono">S18</span>, <span class="mono">D16</span>, <span class="mono">DB</span>.
+      <br>
+      Killer Modus: du klickst nur Zahlen, plus Single Double Triple Buttons, wie am Oche im Kopf.
+      <br>
+      Shortcuts: <span class="kbd">Enter</span> prüft, <span class="kbd">R</span> neue Zahl, <span class="kbd">L</span> Lösung, <span class="kbd">Esc</span> Clear.
+    </div>
+
+    <div style="margin-top:14px;">
+      <label class="small">Checkout nachschlagen</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="lookupIn" type="number" min="2" max="170" placeholder="z. B. 121" style="flex:1;" />
+        <button id="btnLookup" class="primary" style="white-space:nowrap;">Anzeigen</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">
+        Zeigt dir die empfohlenen Wege. Enter funktioniert auch.
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:16px;">
+      <div class="card grow">
+        <h2>Rest</h2>
+        <div class="big" id="remain">—</div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="primary" id="btnNew">Neue Zahl</button>
+          <button id="btnReveal">Lösung zeigen</button>
+          <button id="btnBlink">Lösung blinken</button>
+          <button id="btnReset">Stats reset</button>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label class="small">Modus</label>
+          <select id="mode">
+  <option value="all">Alles (170 bis 2)</option>
+  <option value="high">High Finishes (170 bis 113)</option>
+  <option value="mid">Mid Finishes (112 bis 60)</option>
+  <option value="low">Low Finishes (59 bis 2)</option>
+</select>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label class="small">Eingabeart</label>
+          <select id="inputMode">
+            <option value="killer">Killer Modus, Zahlen klicken</option>
+            <option value="token">Token Modus, S20 D16 T19</option>
+          </select>
+        </div>
+
+        <div style="margin-top:14px;" id="result"></div>
+
+        <div style="margin-top:10px;">
+          <div class="pill">Versuche: <span id="tries">0</span></div>
+          <div class="pill">Richtig: <span id="hits">0</span></div>
+          <div class="pill">Quote: <span id="rate">0%</span></div>
+        </div>
+
+        <div class="hint" style="margin-top:10px;">
+          Lernmodus: erst eingeben, dann prüfen. Spicken ist nur Selbstbetrug.
+        </div>
+      </div>
+
+      <div class="card fixed">
+        <h2>Dein Checkout</h2>
+
+        <div class="grid3">
+          <div>
+            <label class="small">Dart 1</label>
+            <input id="d1" placeholder="z. B. T20" autocomplete="off" />
+          </div>
+          <div>
+            <label class="small">Dart 2</label>
+            <input id="d2" placeholder="z. B. S18" autocomplete="off" />
+          </div>
+          <div>
+            <label class="small">Dart 3</label>
+            <input id="d3" placeholder="z. B. D16" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="primary" id="btnCheck">Prüfen</button>
+          <button id="btnSkip">Als falsch werten, weiter</button>
+          <button id="btnClear">Clear</button>
+        </div>
+
+        <div class="hint" style="margin-top:10px;">
+          Aktives Feld: <span class="mono" id="activeField">Dart 1</span>
+        </div>
+
+        <hr>
+
+        <h2>Dartboard</h2>
+        <div class="boardWrap">
+          <svg id="boardSvg" viewBox="-120 -120 240 240" width="320" height="320" aria-label="Dartboard" role="img" style="max-width:100%; height:auto;">
+            <circle r="110" fill="#ffffff" stroke="#0f172a" stroke-width="2"></circle>
+            <circle r="104" fill="none" stroke="#0f172a" stroke-width="10" opacity=".9"></circle>
+            <circle r="66"  fill="none" stroke="#0f172a" stroke-width="10" opacity=".9"></circle>
+            <circle r="14" fill="#2a8f3a" stroke="#0f172a" stroke-width="1"></circle>
+            <circle r="6"  fill="#c2252a" stroke="#0f172a" stroke-width="1"></circle>
+
+            <g id="wedges"></g>
+
+            <g stroke="#0f172a" stroke-width="1" opacity=".9">
+              <line x1="0" y1="-110" x2="0" y2="-16"></line>
+              <line x1="34.0" y1="-104.6" x2="5.0" y2="-15.3"></line>
+              <line x1="64.7" y1="-88.9" x2="9.5" y2="-13.0"></line>
+              <line x1="88.9" y1="-64.7" x2="13.0" y2="-9.5"></line>
+              <line x1="104.6" y1="-34.0" x2="15.3" y2="-5.0"></line>
+              <line x1="110" y1="0" x2="16" y2="0"></line>
+              <line x1="104.6" y1="34.0" x2="15.3" y2="5.0"></line>
+              <line x1="88.9" y1="64.7" x2="13.0" y2="9.5"></line>
+              <line x1="64.7" y1="88.9" x2="9.5" y2="13.0"></line>
+              <line x1="34.0" y1="104.6" x2="5.0" y2="15.3"></line>
+              <line x1="0" y1="110" x2="0" y2="16"></line>
+              <line x1="-34.0" y1="104.6" x2="-5.0" y2="15.3"></line>
+              <line x1="-64.7" y1="88.9" x2="-9.5" y2="13.0"></line>
+              <line x1="-88.9" y1="64.7" x2="-13.0" y2="9.5"></line>
+              <line x1="-104.6" y1="34.0" x2="-15.3" y2="5.0"></line>
+              <line x1="-110" y1="0" x2="-16" y2="0"></line>
+              <line x1="-104.6" y1="-34.0" x2="-15.3" y2="-5.0"></line>
+              <line x1="-88.9" y1="-64.7" x2="-13.0" y2="-9.5"></line>
+              <line x1="-64.7" y1="-88.9" x2="-9.5" y2="-13.0"></line>
+              <line x1="-34.0" y1="-104.6" x2="-5.0" y2="-15.3"></line>
+            </g>
+
+            <g font-family="system-ui, Arial" font-size="12" font-weight="900" fill="#0f172a" text-anchor="middle">
+              <text x="0" y="-94">20</text><text x="30" y="-90">1</text><text x="56" y="-74">18</text><text x="76" y="-54">4</text><text x="92" y="-28">13</text>
+              <text x="96" y="6">6</text><text x="92" y="36">10</text><text x="76" y="60">15</text><text x="56" y="80">2</text><text x="30" y="94">17</text>
+              <text x="0" y="99">3</text><text x="-30" y="94">19</text><text x="-56" y="80">7</text><text x="-76" y="60">16</text><text x="-92" y="36">8</text>
+              <text x="-96" y="6">11</text><text x="-92" y="-28">14</text><text x="-76" y="-54">9</text><text x="-56" y="-74">12</text><text x="-30" y="-90">5</text>
+            </g>
+
+            <g id="hl" opacity="0.95" pointer-events="none">
+              <circle id="hlRing" cx="0" cy="0" r="16" fill="none" stroke="#0f172a" stroke-width="3"></circle>
+              <circle id="hlDot"  cx="0" cy="0" r="7" fill="#0f172a"></circle>
+              <text id="hlLabel" x="0" y="0" text-anchor="middle" font-family="system-ui, Arial" font-size="11" font-weight="950" fill="#0f172a"></text>
+            </g>
+          </svg>
+        </div>
+
+        <div id="killerPanel">
+          <h2>Killer Modus</h2>
+
+          <div class="bar" style="margin-bottom:10px;">
+            <button id="mS" class="active">Single</button>
+            <button id="mD">Double</button>
+            <button id="mT">Triple</button>
+            <button id="btnSB">SB 25</button>
+            <button id="btnDB">DB 50</button>
+          </div>
+
+          <div class="pad" id="numPad"></div>
+
+          <div class="hint" style="margin-top:10px;">
+            Klick auf eine Zahl setzt sie ins aktive Dart Feld, danach springt es automatisch weiter.
+            Single Double Triple wählst du oben. SB und DB sind extra Buttons.
+          </div>
+        </div>
+
+        <div id="tokenPanel" style="display:none;">
+          <h2>Token Modus</h2>
+          <div class="hint">
+            Tippe Tokens wie <span class="mono">T20</span> oder <span class="mono">D16</span>. Das Board bleibt trotzdem klickbar.
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="hint boardHint">
+          Board Klick setzt im Killer Modus Single, Double mit Shift, Triple mit Alt. Bulls sind klickbar.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Routen
+      const routes = new Map([
+        [32, [["D16"]]], [31, [["S15","D8"], ["S11","D10"]]], [30, [["D15"]]],
+        [29, [["S13","D8"], ["S17","D6"]]], [28, [["D14"]]], [27, [["S19","D4"]]],
+        [26, [["D13"]]], [25, [["S17","D4"], ["S9","D8"]]], [24, [["D12"]]],
+        [23, [["S7","D8"]]], [22, [["D11"]]], [21, [["S5","D8"]]], [20, [["D10"]]],
+        [19, [["S3","D8"]]], [18, [["D9"]]], [17, [["S9","D4"]]], [16, [["D8"]]],
+        [15, [["S7","D4"], ["S11","D2"]]], [14, [["D7"]]], [13, [["S5","D4"], ["S11","D1"]]],
+        [12, [["D6"]]], [11, [["S3","D4"], ["S1","D5"]]], [10, [["D5"]]],
+        [9,  [["S1","D4"], ["S3","D3"]]], [8, [["D4"]]], [7, [["S3","D2"]]],
+        [6, [["D3"]]], [5, [["S1","D2"]]], [4, [["D2"]]], [3, [["S1","D1"]]], [2, [["D1"]]],
+        // 112–60
+        [112, [["T20","S20","D16"]]],
+        [111, [["T20","S19","D16"]]],
+        [110, [["T20","S18","D16"]]],
+        [109, [["T20","S17","D16"]]],
+        [108, [["T20","S16","D16"]]],
+        [107, [["T19","DB"]]],
+        [106, [["T20","S10","D18"]]],
+        [105, [["T20","S13","D16"]]],
+        [104, [["T18","DB"]]],
+        [103, [["T20","S3","D20"]]],
+        [102, [["T20","S10","D16"]]],
+        [101, [["T17","DB"]]],
+        [100, [["T20","D20"]]],
+        [99, [["T20","S7","D16"]]],
+        [98, [["T20","D19"]]],
+        [97, [["T19","D20"]]],
+        [96, [["T20","D18"]]],
+        [95, [["T19","D19"]]],
+        [94, [["T18","D20"]]],
+        [93, [["T19","D18"]]],
+        [92, [["T20","D16"]]],
+        [91, [["T17","D20"]]],
+        [90, [["T18","D18"]]],
+        [89, [["T19","D16"]]],
+        [88, [["T16","D20"]]],
+        [87, [["T17","D18"]]],
+        [86, [["T18","D16"]]],
+        [85, [["T15","D20"]]],
+        [84, [["T20","D12"]]],
+        [83, [["T17","D16"]]],
+        [82, [["T14","D20"]]],
+        [81, [["T15","D18"]]],
+        [80, [["T20","D10"]]],
+        [79, [["T13","D20"]]],
+        [78, [["T18","D12"]]],
+        [77, [["T19","D10"]]],
+        [76, [["T20","D8"]]],
+        [75, [["T17","D12"]]],
+        [74, [["T18","D10"]]],
+        [73, [["T19","D8"]]],
+        [72, [["T12","D18"]]],
+        [71, [["T17","D10"]]],
+        [70, [["T10","D20"]]],
+        [69, [["T13","D15"]]],
+        [68, [["T20","D4"]]],
+        [67, [["T17","D8"]]],
+        [66, [["T10","D18"]]],
+        [65, [["SB","D20"]]],
+        [64, [["T16","D8"]]],
+        [63, [["T13","D12"]]],
+        [62, [["T10","D16"]]],
+        [61, [["T15","D8"]]],
+        [60, [["S20","D20"]]],
+        // 59–33
+        [59, [["S19","D20"]]],
+        [58, [["S18","D20"]]],
+        [57, [["S17","D20"], ["SB","D16"]]],
+        [56, [["T16","D4"]]],
+        [55, [["S15","D20"], ["S19","D18"]]],
+        [54, [["S14","D20"]]],
+        [53, [["S17","D18"], ["S13","D20"]]],
+        [52, [["S12","D20"], ["T12","D8"]]],
+        [51, [["S19","D16"], ["S11","D20"]]],
+        [50, [["DB"], ["S18","D16"]]],
+        [49, [["S17","D16"], ["S9","D20"]]],
+        [48, [["S16","D16"]]],
+        [47, [["S15","D16"]]],
+        [46, [["S6","D20"], ["S10","D18"], ["S14","D16"]]],
+        [45, [["S13","D16"]]],
+        [44, [["S12","D16"]]],
+        [43, [["S11","D16"], ["S3","D20"]]],
+        [42, [["S10","D16"]]],
+        [41, [["S9","D16"]]],
+        [40, [["D20"]]],
+        [39, [["S7","D16"]]],
+        [38, [["D19"]]],
+        [37, [["S5","D16"]]],
+        [36, [["D18"]]],
+        [35, [["S3","D15"]]],
+        [34, [["D17"]]],
+        [33, [["S1","D16"], ["S17","D8"]]],
+
+        [170, [["T20","T20","DB"]]], [167, [["T20","T19","DB"]]], [164, [["T20","T18","DB"]]], [161, [["T20","T17","DB"]]],
+        [160, [["T20","T20","D20"]]], [158, [["T20","T20","D19"]]], [157, [["T20","T19","D20"]]], [156, [["T20","T20","D18"]]],
+        [155, [["T20","T19","D19"]]], [154, [["T20","T18","D20"]]], [153, [["T20","T19","D18"]]], [152, [["T20","T20","D16"]]],
+        [151, [["T20","T17","D20"], ["T19","T18","D20"]]], [150, [["T20","T18","D18"], ["T19","T19","D18"]]],
+        [149, [["T20","T19","D16"]]], [148, [["T20","T20","D14"], ["T19","T17","D20"]]],
+        [147, [["T20","T17","D18"], ["T19","T18","D18"]]], [146, [["T20","T18","D16"], ["T19","T19","D16"]]],
+        [145, [["T20","T19","D14"]]], [144, [["T20","T20","D12"], ["T19","T17","D18"], ["T20","T16","D18"]]],
+        [143, [["T20","T17","D16"], ["T19","T18","D16"]]], [142, [["T20","T14","D20"], ["T20","DB","D16"], ["T19","T19","D14"]]],
+        [141, [["T20","T19","D12"], ["T20","T15","D18"]]], [140, [["T20","T20","D10"]]],
+        [139, [["T20","T13","D20"], ["T19","T14","D20"]]], [138, [["T20","T18","D12"], ["T19","T19","D12"]]],
+        [137, [["T20","T19","D10"]]], [136, [["T20","T20","D8"]]],
+        [135, [["T20","T17","D12"], ["T19","T18","D12"], ["DB","T19","D14"]]],
+        [134, [["T20","T14","D16"], ["T19","T15","D16"]]], [133, [["T20","T19","D8"]]],
+        [132, [["T20","T12","D18"], ["T20","T16","D12"], ["T20","T20","D6"]]],
+        [131, [["T20","T13","D16"], ["T19","T14","D16"]]], [130, [["T20","T20","D5"]]],
+        [129, [["T19","T12","D18"]]], [128, [["T18","T14","D16"]]], [127, [["T20","T17","D8"]]],
+        [126, [["T19","T19","D6"]]], [125, [["T18","T13","D16"]]], [124, [["T20","T14","D11"]]],
+        [123, [["T19","T16","D9"]]], [122, [["T18","T18","D7"]]], [121, [["T20","T11","D14"]]],
+        [120, [["T20","S20","D20"]]], [119, [["T19","T12","D13"]]], [118, [["T20","S18","D20"]]],
+        [117, [["T20","S17","D20"]]], [116, [["T20","S16","D20"], ["T19","S19","D20"]]],
+        [115, [["T19","S18","D20"], ["T20","S15","D20"]]], [114, [["T20","S14","D20"], ["T19","S17","D20"]]],
+        [113, [["T19","S16","D20"]]],
+      ]);
+
+      // Helpers
+      function normToken(t) {
+        if (!t) return "";
+        t = String(t).trim().toUpperCase();
+        if (t === "BULL" || t === "B") return "SB";
+        if (t === "DBULL" || t === "BULLSEYE") return "DB";
+        return t.replaceAll(" ", "");
+      }
+      function tokenValue(tok) {
+        tok = normToken(tok);
+        if (!tok) return 0;
+        if (tok === "SB") return 25;
+        if (tok === "DB") return 50;
+        const m = tok.match(/^([SDT])(\d{1,2})$/);
+        if (!m) return null;
+        const mult = m[1] === "S" ? 1 : (m[1] === "D" ? 2 : 3);
+        const n = parseInt(m[2], 10);
+        if (n < 1 || n > 20) return null;
+        return mult * n;
+      }
+      function isValidToken(tok) {
+        tok = normToken(tok);
+        if (!tok) return true;
+        if (tok === "SB" || tok === "DB") return true;
+        return /^([SDT])(\d{1,2})$/.test(tok) && tokenValue(tok) !== null;
+      }
+      function sameRoute(a, b) {
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) if (normToken(a[i]) !== normToken(b[i])) return false;
+        return true;
+      }
+
+      // UI State
+      let current = null;
+      let tries = 0;
+      let hits = 0;
+      let blinking = false;
+      let blinkTimer = null;
+
+      const remainEl = document.getElementById("remain");
+      const resEl = document.getElementById("result");
+      const d1 = document.getElementById("d1");
+      const d2 = document.getElementById("d2");
+      const d3 = document.getElementById("d3");
+      const inputs = [d1, d2, d3];
+      const modeEl = document.getElementById("mode");
+      const inputModeEl = document.getElementById("inputMode");
+      const killerPanel = document.getElementById("killerPanel");
+      const tokenPanel = document.getElementById("tokenPanel");
+      const activeFieldEl = document.getElementById("activeField");
+
+      let activeIndex = 0;
+
+      function setActive(i) {
+        activeIndex = Math.max(0, Math.min(2, i));
+        activeFieldEl.textContent = "Dart " + (activeIndex + 1);
+        inputs[activeIndex].focus();
+      }
+
+      function readAttempt() {
+        return [normToken(d1.value), normToken(d2.value), normToken(d3.value)].filter(Boolean);
+      }
+
+      // Stats
+      function setStats() {
+        document.getElementById("tries").textContent = tries;
+        document.getElementById("hits").textContent = hits;
+        const r = tries ? Math.round((hits / tries) * 100) : 0;
+        document.getElementById("rate").textContent = r + "%";
+        localStorage.setItem("co_tries", String(tries));
+        localStorage.setItem("co_hits", String(hits));
+      }
+      function loadStats() {
+        tries = parseInt(localStorage.getItem("co_tries") || "0", 10);
+        hits  = parseInt(localStorage.getItem("co_hits")  || "0", 10);
+        setStats();
+      }
+
+      // Pools
+function poolByMode() {
+  const mode = modeEl.value;
+  const keys = Array.from(routes.keys());
+
+  if (mode === "high") return keys.filter(k => k >= 113 && k <= 170);
+  if (mode === "mid")  return keys.filter(k => k >= 60 && k <= 112);
+  if (mode === "low")  return keys.filter(k => k >= 2 && k <= 59);
+
+  return keys.filter(k => k >= 2 && k <= 170);
+}
+
+      // Dartboard mapping
+      const boardOrder = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+      const angleMap = new Map(boardOrder.map((n, i) => [n, i * 18]));
+      function polar(r, deg) {
+        const rad = (deg - 90) * Math.PI / 180;
+        return { x: r * Math.cos(rad), y: r * Math.sin(rad) };
+      }
+      function setHL(x, y, labelText, ringR = 16) {
+        document.getElementById("hlRing").setAttribute("cx", x);
+        document.getElementById("hlRing").setAttribute("cy", y);
+        document.getElementById("hlRing").setAttribute("r", ringR);
+        document.getElementById("hlDot").setAttribute("cx", x);
+        document.getElementById("hlDot").setAttribute("cy", y);
+        const lab = document.getElementById("hlLabel");
+        lab.setAttribute("x", x);
+        lab.setAttribute("y", y + 4);
+        lab.textContent = labelText || "";
+      }
+      function highlightToken(tok) {
+        tok = normToken(tok);
+        if (!tok) { setHL(0,0,""); return; }
+        if (tok === "DB") { setHL(0,0,"DB", 14); return; }
+        if (tok === "SB") { setHL(0,0,"SB", 22); return; }
+        const m = tok.match(/^([SDT])(\d{1,2})$/);
+        if (!m) { setHL(0,0,""); return; }
+        const band = m[1];
+        const num = parseInt(m[2], 10);
+        if (!angleMap.has(num)) { setHL(0,0,""); return; }
+        const deg = angleMap.get(num);
+        const r = band === "D" ? 98 : (band === "T" ? 66 : 82);
+        const p = polar(r, deg);
+        setHL(p.x, p.y, tok, 16);
+      }
+      function highlightCurrentFinish() {
+        if (current === null) return;
+        const possible = routes.get(current) || [];
+        if (!possible.length) return;
+
+        const attempt = readAttempt();
+        const route = possible[0];
+        const nextIndex = attempt.length;
+        const tok = route[Math.min(nextIndex, route.length - 1)];
+        highlightToken(tok);
+      }
+
+      // Blink
+      function stopBlink() {
+        blinking = false;
+        if (blinkTimer) clearInterval(blinkTimer);
+        blinkTimer = null;
+      }
+      function blinkSolutions() {
+        if (current === null) return;
+        const possible = routes.get(current) || [];
+        if (!possible.length) return;
+
+        stopBlink();
+        blinking = true;
+
+        let i = 0;
+        blinkTimer = setInterval(() => {
+          if (!blinking) return;
+          const route = possible[i % possible.length];
+          const finish = route[route.length - 1];
+          highlightToken(finish);
+          i++;
+        }, 650);
+
+        setTimeout(() => stopBlink(), 8000);
+      }
+
+      // Core actions
+      function newNumber() {
+        stopBlink();
+        const pool = poolByMode();
+        current = pool[Math.floor(Math.random() * pool.length)];
+        remainEl.textContent = current;
+        resEl.innerHTML = "";
+        d1.value = ""; d2.value = ""; d3.value = "";
+        setActive(0);
+        highlightCurrentFinish();
+      }
+      function showSolution() {
+        if (current === null) return;
+        const sol = routes.get(current) || [];
+        const lines = sol.map(r => "• " + r.join(", ")).join("<br>");
+        resEl.innerHTML = `<div class="mono"><span class="pill">Lösung</span><br>${lines || "—"}</div>`;
+        highlightCurrentFinish();
+      }
+      function validateAttempt(attempt) {
+        for (const t of attempt) if (!isValidToken(t)) return t;
+        return null;
+      }
+      function check() {
+        if (current === null) return;
+        stopBlink();
+
+        const attempt = readAttempt();
+        const badTok = validateAttempt(attempt);
+        if (badTok) {
+          resEl.innerHTML = `<div class="bad">Ungültige Eingabe: <span class="mono">${badTok}</span></div>
+            <div class="hint">Erlaubt: S1–S20, D1–D20, T1–T20, SB, DB</div>`;
+          return;
+        }
+
+        const possible = routes.get(current) || [];
+        tries++;
+
+        const ok = possible.some(r => sameRoute(r, attempt));
+        if (ok) {
+          hits++;
+          resEl.innerHTML = `<div class="ok">Richtig ✅</div><div class="hint mono">Dein Weg: ${attempt.join(", ")}</div>`;
+        } else {
+          const sols = possible.map(r => r.join(", ")).join(" | ");
+          resEl.innerHTML = `<div class="bad">Nicht der empfohlene Weg ❌</div>
+            <div class="hint">Empfohlen: <span class="mono">${sols || "—"}</span></div>
+            <div class="hint mono">Dein Weg: ${attempt.join(", ") || "—"}</div>`;
+        }
+        setStats();
+        highlightCurrentFinish();
+      }
+      function skipAsWrong() {
+        if (current === null) return;
+        stopBlink();
+        tries++;
+        setStats();
+        resEl.innerHTML = `<div class="bad">Als falsch gewertet ❌</div>`;
+        newNumber();
+      }
+      function clearInputs() {
+        stopBlink();
+        d1.value = ""; d2.value = ""; d3.value = "";
+        setActive(0);
+        highlightCurrentFinish();
+      }
+      function resetStats() {
+        tries = 0; hits = 0;
+        setStats();
+        resEl.innerHTML = `<div class="small">Stats zurückgesetzt.</div>`;
+      }
+
+      // Input Mode switching
+      function applyInputMode() {
+        const m = inputModeEl.value;
+        if (m === "killer") {
+          killerPanel.style.display = "block";
+          tokenPanel.style.display = "none";
+          d1.readOnly = true; d2.readOnly = true; d3.readOnly = true;
+        } else {
+          killerPanel.style.display = "none";
+          tokenPanel.style.display = "block";
+          d1.readOnly = false; d2.readOnly = false; d3.readOnly = false;
+        }
+        clearInputs();
+      }
+
+      // Killer Modus, multiplier
+      let mult = "S";
+      const btnS = document.getElementById("mS");
+      const btnD = document.getElementById("mD");
+      const btnT = document.getElementById("mT");
+
+      function setMult(m) {
+        mult = m;
+        btnS.classList.toggle("active", m === "S");
+        btnD.classList.toggle("active", m === "D");
+        btnT.classList.toggle("active", m === "T");
+      }
+
+      function pushToken(tok) {
+        tok = normToken(tok);
+        inputs[activeIndex].value = tok;
+        if (activeIndex < 2) setActive(activeIndex + 1);
+        highlightCurrentFinish();
+      }
+
+      function pushNumber(n) {
+        const m = inputModeEl.value;
+        if (m === "token") return;
+        const num = parseInt(n, 10);
+        if (num === 25) return pushToken("SB");
+        if (num === 50) return pushToken("DB");
+        if (num < 1 || num > 20) return;
+        pushToken(mult + String(num));
+      }
+
+      // Number pad build
+      function buildNumPad() {
+        const pad = document.getElementById("numPad");
+        pad.innerHTML = "";
+        const nums = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+        for (const n of nums) {
+          const b = document.createElement("button");
+          b.textContent = String(n);
+          b.addEventListener("click", () => pushNumber(n));
+          pad.appendChild(b);
+        }
+      }
+
+      // Dartboard click areas
+      function buildWedges() {
+        const g = document.getElementById("wedges");
+        while (g.firstChild) g.removeChild(g.firstChild);
+
+        const sb = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        sb.setAttribute("cx","0"); sb.setAttribute("cy","0"); sb.setAttribute("r","14");
+        sb.setAttribute("fill","transparent");
+        sb.style.cursor = "pointer";
+        sb.addEventListener("click", () => pushToken("SB"));
+        g.appendChild(sb);
+
+        const db = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        db.setAttribute("cx","0"); db.setAttribute("cy","0"); db.setAttribute("r","6");
+        db.setAttribute("fill","transparent");
+        db.style.cursor = "pointer";
+        db.addEventListener("click", () => pushToken("DB"));
+        g.appendChild(db);
+
+        for (const num of boardOrder) {
+          const deg = angleMap.get(num);
+          const p = polar(92, deg);
+          const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          c.setAttribute("cx", String(p.x));
+          c.setAttribute("cy", String(p.y));
+          c.setAttribute("r", "10");
+          c.setAttribute("fill", "transparent");
+          c.style.cursor = "pointer";
+          c.addEventListener("click", (e) => {
+            if (inputModeEl.value === "killer") {
+              if (e.shiftKey) setMult("D");
+              if (e.altKey) setMult("T");
+              pushNumber(num);
+              return;
+            }
+            const prefix = e.shiftKey ? "D" : (e.altKey ? "T" : "S");
+            pushToken(prefix + num);
+          });
+          g.appendChild(c);
+        }
+      }
+
+      // --- Lookup (Checkout nachschlagen) ---
+      const lookupIn = document.getElementById("lookupIn");
+      const btnLookup = document.getElementById("btnLookup");
+
+      function lookupShow() {
+        stopBlink();
+
+        const raw = String(lookupIn?.value ?? "").trim();
+        const n = parseInt(raw, 10);
+
+        if (!raw || Number.isNaN(n)) {
+          resEl.innerHTML = `<div class="bad">Bitte eine Zahl eingeben, z. B. 121.</div>`;
+          return;
+        }
+
+        const sols = routes.get(n);
+        if (!sols || !sols.length) {
+          resEl.innerHTML = `<div class="bad">Für ${n} habe ich keinen Checkout in deiner Tabelle.</div>`;
+          return;
+        }
+
+        current = n;
+        remainEl.textContent = String(n);
+
+        d1.value = ""; d2.value = ""; d3.value = "";
+        setActive(0);
+
+        const lines = sols.map(r => "• " + r.join(", ")).join("<br>");
+        resEl.innerHTML = `<div class="mono"><span class="pill">Lösung ${n}</span><br>${lines}</div>`;
+
+        highlightCurrentFinish();
+      }
+
+      if (btnLookup && lookupIn) {
+        btnLookup.addEventListener("click", lookupShow);
+        lookupIn.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            lookupShow();
+          }
+        });
+      }
+
+      // Events
+      document.getElementById("btnNew").addEventListener("click", newNumber);
+      document.getElementById("btnReveal").addEventListener("click", showSolution);
+      document.getElementById("btnBlink").addEventListener("click", blinkSolutions);
+      document.getElementById("btnCheck").addEventListener("click", check);
+      document.getElementById("btnSkip").addEventListener("click", skipAsWrong);
+      document.getElementById("btnReset").addEventListener("click", resetStats);
+      document.getElementById("btnClear").addEventListener("click", clearInputs);
+      modeEl.addEventListener("change", newNumber);
+      inputModeEl.addEventListener("change", applyInputMode);
+
+      btnS.addEventListener("click", () => setMult("S"));
+      btnD.addEventListener("click", () => setMult("D"));
+      btnT.addEventListener("click", () => setMult("T"));
+      document.getElementById("btnSB").addEventListener("click", () => pushToken("SB"));
+      document.getElementById("btnDB").addEventListener("click", () => pushToken("DB"));
+
+      inputs.forEach((inp, idx) => {
+        inp.addEventListener("focus", () => setActive(idx));
+        inp.addEventListener("input", () => {
+          inp.value = inp.value.toUpperCase().replaceAll(" ", "");
+          highlightCurrentFinish();
+        });
+        inp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); check(); }
+          if (e.key === "Escape") { e.preventDefault(); clearInputs(); }
+        });
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "r") newNumber();
+        if (e.key.toLowerCase() === "l") showSolution();
+        if (inputModeEl.value === "killer") {
+          if (e.key === "s") setMult("S");
+          if (e.key === "d") setMult("D");
+          if (e.key === "t") setMult("T");
+        }
+      });
+
+      // Init
+loadStats();
+buildNumPad();
+buildWedges();
+setMult("S");
+
+// gespeicherten Modus laden
+const savedMode = localStorage.getItem("co_mode");
+if (savedMode) modeEl.addEventListener("change", () => {
+  localStorage.setItem("co_mode", modeEl.value);
+  newNumber();
+});
+
+applyInputMode();
+newNumber();
+    </script>
+  </div>
+</body>
+</html>
